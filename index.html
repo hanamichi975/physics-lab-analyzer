@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Physics Lab Analyzer — 대전과학고등학교</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#071a0e;--surface:#0d1f12;--surfaceLight:#142818;--border:#1f3d26;
+  --borderFocus:#4ade80;--accent:#4ade80;--accentGlow:rgba(74,222,128,.13);
+  --accentBright:#86efac;--accentDark:#16a34a;
+  --best:#fbbf24;--bestBg:rgba(251,191,36,.08);
+  --warn:#fb923c;--text:#e8f5e9;--textDim:#a3c9a8;--textMuted:#5c8a63;
+  --danger:#f87171;
+  --mono:'JetBrains Mono','SF Mono','Fira Code',monospace;
+  --sans:'Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);padding:28px 16px;min-height:100vh}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+input,select{background:var(--surfaceLight);border:1px solid var(--border);color:var(--text);
+  padding:10px 14px;border-radius:8px;font-family:var(--mono);font-size:15px;outline:none;
+  transition:border-color .2s;width:100%}
+input:focus{border-color:var(--borderFocus);box-shadow:0 0 0 3px var(--accentGlow)}
+input::placeholder{color:var(--textMuted)}
+
+.wrap{max-width:1020px;margin:0 auto}
+.header{text-align:center;margin-bottom:36px}
+.logo{display:inline-flex;align-items:center;gap:12px;margin-bottom:10px}
+.logo-icon{width:44px;height:44px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),#22c55e);
+  display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#071a0e}
+.logo h1{font-family:var(--mono);font-size:26px;font-weight:700;
+  background:linear-gradient(135deg,var(--accentBright),#22c55e);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{color:var(--textDim);font-size:15px}
+
+.panel{background:var(--surface);border-radius:14px;border:1px solid var(--border);padding:22px;margin-bottom:18px;
+  animation:fadeIn .3s ease-out}
+.panel-title{font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field label{font-size:13px;color:var(--textDim);font-weight:600;text-transform:uppercase;
+  letter-spacing:.04em;display:block;margin-bottom:5px}
+
+.tabs{display:flex;gap:6px;margin-bottom:18px}
+.tab-btn{flex:1;padding:12px 0;border-radius:10px;border:none;font-family:var(--sans);
+  font-size:15px;font-weight:700;cursor:pointer;transition:all .2s}
+.tab-btn.active{background:var(--accent);color:#071a0e}
+.tab-btn:not(.active){background:var(--surfaceLight);color:var(--textDim)}
+
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{width:36px;height:38px;border-radius:8px;border:1px solid var(--border);
+  background:var(--surfaceLight);color:var(--text);cursor:pointer;font-size:18px;font-weight:700}
+.stepper span{font-family:var(--mono);font-size:18px;font-weight:700;min-width:28px;text-align:center}
+
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:14px}
+thead tr{background:var(--surfaceLight)}
+th{padding:12px 10px;font-weight:700;border-bottom:1px solid var(--border);font-size:13px}
+td{padding:8px 8px;text-align:center}
+td input{padding:7px 8px;background:transparent;border:1px solid rgba(31,61,38,.4);text-align:center;width:100%;font-size:14px}
+.del-btn{width:30px;height:30px;border-radius:6px;border:none;background:transparent;
+  color:var(--danger);cursor:pointer;font-size:16px;opacity:.6}
+.del-btn:disabled{opacity:.2;cursor:default}
+
+.btn-row{display:flex;flex-wrap:wrap;gap:10px;padding:14px 18px}
+.action-btn{padding:10px 22px;border-radius:10px;border:none;font-family:var(--sans);
+  font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
+.action-btn.primary{border:1px dashed var(--border);background:transparent;color:var(--accent)}
+.action-btn.green{background:var(--accent);color:#071a0e}
+.action-btn.green:hover{background:var(--accentBright)}
+.action-btn.outline{border:1px solid var(--border);background:transparent;color:var(--textDim)}
+.action-btn.outline:hover{border-color:var(--accent);color:var(--accent)}
+
+.note-box{margin-top:14px;padding:14px 18px;border-radius:12px;background:var(--surfaceLight);
+  border:1px solid var(--border);font-size:14px;color:var(--textDim);font-family:var(--mono);line-height:1.8}
+
+.empty{padding:48px;text-align:center;color:var(--textMuted)}
+.empty-icon{font-size:48px;margin-bottom:14px}
+
+.option-bar{display:flex;align-items:center;gap:24px;margin-bottom:18px;padding:14px 18px;
+  background:var(--surface);border-radius:12px;border:1px solid var(--border);flex-wrap:wrap}
+.chk-label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:15px;color:var(--text)}
+.chk-box{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);display:flex;
+  align-items:center;justify-content:center;transition:all .2s;cursor:pointer;flex-shrink:0}
+.chk-box.checked{border-color:var(--accent);background:var(--accent)}
+.chk-box.checked::after{content:'✓';color:#071a0e;font-size:14px;font-weight:800}
+
+.chart-wrap{background:var(--surface);border-radius:14px;border:1px solid var(--border);
+  padding:22px 18px 14px;margin-bottom:18px}
+
+.model-row{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:10px}
+.model-row.best{background:var(--bestBg);border:1px solid rgba(251,191,36,.25)}
+.model-row:not(.best){border:1px solid transparent}
+.model-name{font-family:var(--mono);font-size:15px;font-weight:700}
+.model-sub{font-size:12px;color:var(--textMuted)}
+.r2-bar{flex:1;height:10px;background:var(--surfaceLight);border-radius:5px;overflow:hidden}
+.r2-fill{height:100%;border-radius:5px;transition:width .5s ease}
+.r2-val{font-family:var(--mono);font-size:15px;font-weight:700;min-width:80px;text-align:right}
+
+.best-box{background:var(--surface);border-radius:14px;border:1px solid rgba(251,191,36,.25);
+  padding:22px;margin-bottom:18px}
+.best-formula{font-family:var(--mono);font-size:20px;font-weight:700;text-align:center;
+  padding:18px 0;color:var(--accentBright);background:var(--accentGlow);border-radius:10px;margin-bottom:18px}
+.stat-grid{display:grid;gap:14px;font-family:var(--mono);font-size:15px}
+.stat-card{text-align:center;padding:14px;background:var(--surfaceLight);border-radius:10px}
+.stat-label{color:var(--textMuted);font-size:12px;margin-bottom:5px}
+.stat-val{font-weight:700;color:var(--accent)}
+
+.footer{text-align:center;margin-top:36px;color:var(--textMuted);font-size:12px;font-family:var(--mono)}
+
+.csv-drop{border:2px dashed var(--border);border-radius:12px;padding:22px;text-align:center;
+  color:var(--textMuted);font-size:15px;cursor:pointer;transition:all .2s;margin-bottom:14px}
+.csv-drop:hover,.csv-drop.drag{border-color:var(--accent);color:var(--accent);background:var(--accentGlow)}
+.csv-drop input[type=file]{display:none}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo"><div class="logo-icon">λ</div><h1>Physics Lab Analyzer</h1></div>
+    <p class="subtitle">실험 데이터 입력 → 측정불확도 계산 → 최적 물리량 관계 탐색</p>
+  </div>
+
+  <!-- Setup -->
+  <div class="panel" id="setupPanel">
+    <div class="panel-title" style="color:var(--accent)">⚙ 실험 변인 설정</div>
+    <div class="grid2">
+      <div class="field"><label>조작변인명</label><input id="indepName" placeholder="예: 질량"></div>
+      <div class="field"><label>조작변인 단위</label><input id="indepUnit" placeholder="예: kg"></div>
+      <div class="field"><label>종속변인명</label><input id="depName" placeholder="예: 늘어난 길이"></div>
+      <div class="field"><label>종속변인 단위</label><input id="depUnit" placeholder="예: cm"></div>
+      <div class="field"><label>측정도구 최소눈금</label><input id="minScale" type="number" step="any" placeholder="예: 0.1"></div>
+      <div class="field"><label>포함인자 k</label><input id="kFactor" type="number" step="any" min="1" value="2" placeholder="보통 2"></div>
+      <div class="field">
+        <label>반복 측정 횟수</label>
+        <div class="stepper">
+          <button onclick="changeTrial(-1)">−</button>
+          <span id="trialDisp">3</span>
+          <button onclick="changeTrial(1)">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('data',this)">📊 데이터 입력</button>
+    <button class="tab-btn" onclick="switchTab('results',this)">📈 결과 분석</button>
+  </div>
+
+  <!-- Data Tab -->
+  <div id="dataTab">
+    <div class="csv-drop" id="csvDrop" onclick="document.getElementById('csvFile').click()"
+         ondragover="event.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
+         ondrop="event.preventDefault();this.classList.remove('drag');handleCSV(event.dataTransfer.files[0])">
+      📂 CSV 파일을 드래그하거나 클릭하여 불러오기
+      <br><span style="font-size:13px;color:var(--textMuted)">형식: 조작변인, 1차, 2차, 3차, …</span>
+      <input type="file" id="csvFile" accept=".csv,.tsv,.txt" onchange="handleCSV(this.files[0])">
+    </div>
+
+    <div class="panel" style="padding:0;overflow:hidden">
+      <div style="overflow-x:auto"><table id="dataTable"><thead></thead><tbody></tbody></table></div>
+      <div class="btn-row">
+        <button class="action-btn primary" onclick="addRow()">+ 행 추가</button>
+        <button class="action-btn outline" onclick="clearAll()">🗑 전체 초기화</button>
+      </div>
+    </div>
+    <div id="noteBox" class="note-box" style="display:none"></div>
+  </div>
+
+  <!-- Results Tab -->
+  <div id="resultsTab" style="display:none">
+    <div id="emptyMsg" class="panel empty"><div class="empty-icon">📉</div><div style="font-size:16px">데이터 포인트를 2개 이상 입력하세요.</div></div>
+    <div id="resultsContent" style="display:none">
+      <div class="option-bar">
+        <div class="chk-label" onclick="toggleOrigin()">
+          <div class="chk-box" id="originChk"></div>
+          <span>추세선 원점 (0, 0) 통과</span>
+        </div>
+        <div style="flex:1"></div>
+        <button class="action-btn green" onclick="downloadCSV()">📥 결과 CSV 다운로드</button>
+        <button class="action-btn outline" onclick="downloadChartImage()">🖼 그래프 이미지 저장</button>
+      </div>
+      <div class="chart-wrap">
+        <div class="panel-title" style="color:var(--accent);margin-bottom:18px" id="mainChartTitle">📈 X vs Y</div>
+        <div style="position:relative;height:360px"><canvas id="mainChart"></canvas></div>
+      </div>
+      <div class="panel" id="modelSection">
+        <div class="panel-title" style="color:var(--accent);margin-bottom:18px">🔬 물리량 관계 탐색 (R² 비교)</div>
+        <div id="modelList" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+      <div class="best-box" id="bestBox"></div>
+      <div class="chart-wrap" id="linChartWrap" style="display:none">
+        <div class="panel-title" style="color:var(--accent);margin-bottom:18px" id="linChartTitle">📐 직선화 그래프</div>
+        <div style="position:relative;height:280px"><canvas id="linChart"></canvas></div>
+      </div>
+      <div class="panel" style="padding:0;overflow:hidden" id="summaryWrap">
+        <div class="panel-title" style="color:var(--accent);padding:18px 18px 10px">📋 결과 요약표</div>
+        <div style="overflow-x:auto"><table id="summaryTable"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Physics Lab Analyzer · 대전과학고등학교</div>
+</div>
+
+<script>
+// ═══ State ═══
+let trialCount = 3, forceOrigin = false;
+let rows = [{ x: '', trials: ['','',''] }];
+let mainChartInst = null, linChartInst = null;
+
+const $ = id => document.getElementById(id);
+const val = id => { const v = $(id)?.value; return v === '' ? '' : v; };
+const numVal = id => parseFloat(val(id));
+
+// ═══ Helpers ═══
+function formatNum(n, digits=4) {
+  if (!isFinite(n)) return '—';
+  if (Math.abs(n) < 1e-10) return '0';
+  if (Math.abs(n) > 1e6 || (Math.abs(n) < 0.001 && n !== 0)) return n.toExponential(digits-1);
+  return parseFloat(n.toPrecision(digits)).toString();
+}
+function roundU1sig(U) {
+  if (!isFinite(U) || U === 0) return { rU: 0, dp: 0 };
+  const d = Math.ceil(Math.log10(Math.abs(U)));
+  const power = 1 - d;
+  const mag = Math.pow(10, power);
+  const rU = Math.round(U * mag) / mag;
+  const dp = Math.max(0, power);
+  return { rU, dp };
+}
+function fmtFixed(num, dp) {
+  if (!isFinite(num)) return '—';
+  if (dp < 0) { const m = Math.pow(10, -dp); return (Math.round(num / m) * m).toString(); }
+  return num.toFixed(dp);
+}
+
+// ═══ Regression ═══
+function linearRegression(xs, ys, fo=false) {
+  const n = xs.length;
+  if (n < 2) return { a:0, b:0, r2:0 };
+  if (fo) {
+    const sxy = xs.reduce((s,x,i) => s + x*ys[i], 0);
+    const sxx = xs.reduce((s,x) => s + x*x, 0);
+    if (Math.abs(sxx) < 1e-15) return { a:0, b:0, r2:0 };
+    const a = sxy/sxx, b = 0;
+    const ssRes = ys.reduce((s,y,i) => s + (y - a*xs[i])**2, 0);
+    const ssTot = ys.reduce((s,y) => s + y*y, 0);
+    return { a, b, r2: ssTot < 1e-15 ? 1 : 1 - ssRes/ssTot };
+  }
+  const sx = xs.reduce((a,b)=>a+b,0), sy = ys.reduce((a,b)=>a+b,0);
+  const sxy = xs.reduce((s,x,i)=>s+x*ys[i],0), sxx = xs.reduce((s,x)=>s+x*x,0);
+  const denom = n*sxx - sx*sx;
+  if (Math.abs(denom) < 1e-15) return { a:0, b:0, r2:0 };
+  const a = (n*sxy - sx*sy)/denom, b = (sy - a*sx)/n;
+  const ssRes = ys.reduce((s,y,i) => s + (y - (a*xs[i]+b))**2, 0);
+  const meanY = sy/n;
+  const ssTot = ys.reduce((s,y) => s + (y-meanY)**2, 0);
+  return { a, b, r2: ssTot < 1e-15 ? 1 : 1 - ssRes/ssTot };
+}
+
+function tryModels(xVals, yMeans, fo=false) {
+  const valid = xVals.map((x,i) => ({x, y:yMeans[i]})).filter(p => isFinite(p.x) && isFinite(p.y));
+  if (valid.length < 2) return [];
+  const xs = valid.map(p=>p.x), ys = valid.map(p=>p.y);
+  const sfx = fo ? '' : ' + b';
+  const models = [];
+  { const {a,b,r2}=linearRegression(xs,ys,fo);
+    models.push({name:`y = ax${sfx}`,label:'선형 (linear)',a,b,r2,fn:x=>a*x+b,transform:'x'}); }
+  { const xs2=xs.map(x=>x*x); const {a,b,r2}=linearRegression(xs2,ys,fo);
+    models.push({name:`y = ax²${sfx}`,label:'이차 (quadratic)',a,b,r2,fn:x=>a*x*x+b,transform:'x²'}); }
+  { const f=valid.filter(p=>Math.abs(p.x)>1e-12);
+    if(f.length>=2){const xi=f.map(p=>1/p.x),yi=f.map(p=>p.y);const{a,b,r2}=linearRegression(xi,yi,fo);
+    models.push({name:`y = a/x${sfx}`,label:'반비례 (inverse)',a,b,r2,fn:x=>Math.abs(x)>1e-12?a/x+b:NaN,transform:'1/x'});} }
+  { const f=valid.filter(p=>p.x>=0);
+    if(f.length>=2){const xsq=f.map(p=>Math.sqrt(p.x)),yi=f.map(p=>p.y);const{a,b,r2}=linearRegression(xsq,yi,fo);
+    models.push({name:`y = a√x${sfx}`,label:'제곱근 (sqrt)',a,b,r2,fn:x=>x>=0?a*Math.sqrt(x)+b:NaN,transform:'√x'});} }
+  { const f=valid.filter(p=>p.x>0);
+    if(f.length>=2){const xl=f.map(p=>Math.log(p.x)),yi=f.map(p=>p.y);const{a,b,r2}=linearRegression(xl,yi,fo);
+    models.push({name:`y = a·ln(x)${sfx}`,label:'로그 (log)',a,b,r2,fn:x=>x>0?a*Math.log(x)+b:NaN,transform:'ln(x)'});} }
+  { const f=valid.filter(p=>Math.abs(p.x)>1e-12);
+    if(f.length>=2){const xi2=f.map(p=>1/(p.x*p.x)),yi=f.map(p=>p.y);const{a,b,r2}=linearRegression(xi2,yi,fo);
+    models.push({name:`y = a/x²${sfx}`,label:'역제곱 (inv sq)',a,b,r2,fn:x=>Math.abs(x)>1e-12?a/(x*x)+b:NaN,transform:'1/x²'});} }
+  return models.sort((a,b) => b.r2 - a.r2);
+}
+
+// ═══ Compute ═══
+function computeAll() {
+  const ms = numVal('minScale') || 0;
+  const k = numVal('kFactor') || 2;
+  const uB = ms > 0 ? (ms/2) / Math.sqrt(3) : 0;
+  const data = [];
+  for (const row of rows) {
+    const x = parseFloat(row.x);
+    const vals = row.trials.map(v => parseFloat(v)).filter(v => isFinite(v));
+    const n = vals.length;
+    if (!isFinite(x) || n === 0) continue;
+    const mean = vals.reduce((a,b)=>a+b,0) / n;
+    let uA = 0;
+    if (n > 1) { const variance = vals.reduce((s,v)=>s+(v-mean)**2,0)/(n-1); uA = Math.sqrt(variance/n); }
+    const uC = Math.sqrt(uA*uA + uB*uB);
+    const U = k * uC;
+    const halfRange = n > 1 ? (Math.max(...vals)-Math.min(...vals))/2 : 0;
+    data.push({ x, vals, n, mean, uA, uB, uC, U, halfRange });
+  }
+  return data;
+}
+
+// ═══ CSV Import ═══
+function handleCSV(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result.trim();
+    const sep = text.includes('\t') ? '\t' : ',';
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length === 0) return;
+    const firstCells = lines[0].split(sep).map(s => s.trim());
+    let startIdx = 0;
+    if (isNaN(parseFloat(firstCells[0]))) startIdx = 1;
+    const parsed = [];
+    let maxTrials = 0;
+    for (let i = startIdx; i < lines.length; i++) {
+      const cells = lines[i].split(sep).map(s => s.trim());
+      if (cells.length < 2) continue;
+      const x = cells[0];
+      const trials = cells.slice(1).filter(c => c !== '');
+      maxTrials = Math.max(maxTrials, trials.length);
+      parsed.push({ x, trials });
+    }
+    if (parsed.length === 0) return;
+    trialCount = Math.max(1, Math.min(10, maxTrials));
+    $('trialDisp').textContent = trialCount;
+    rows = parsed.map(p => {
+      const t = [...p.trials];
+      while (t.length < trialCount) t.push('');
+      return { x: p.x, trials: t.slice(0, trialCount) };
+    });
+    renderDataTable();
+    $('csvDrop').innerHTML = `✅ <b>${file.name}</b> 불러오기 완료 (${parsed.length}행, ${trialCount}회 반복)<br>
+      <span style="font-size:13px;color:var(--textMuted)">다른 파일을 드래그하거나 클릭하여 교체</span>
+      <input type="file" id="csvFile" accept=".csv,.tsv,.txt" onchange="handleCSV(this.files[0])" style="display:none">`;
+  };
+  reader.readAsText(file);
+}
+
+function clearAll() { rows = [{ x:'', trials: Array(trialCount).fill('') }]; renderDataTable(); }
+
+// ═══ Tabs ═══
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  $('dataTab').style.display = tab === 'data' ? '' : 'none';
+  $('resultsTab').style.display = tab === 'results' ? '' : 'none';
+  if (tab === 'results') renderResults();
+}
+
+function changeTrial(d) {
+  trialCount = Math.max(1, Math.min(10, trialCount + d));
+  $('trialDisp').textContent = trialCount;
+  rows.forEach(r => { while(r.trials.length < trialCount) r.trials.push(''); r.trials = r.trials.slice(0, trialCount); });
+  renderDataTable();
+}
+function addRow() { rows.push({ x:'', trials: Array(trialCount).fill('') }); renderDataTable(); }
+function removeRow(i) { if (rows.length > 1) { rows.splice(i,1); renderDataTable(); } }
+function toggleOrigin() { forceOrigin = !forceOrigin; $('originChk').classList.toggle('checked', forceOrigin); renderResults(); }
+
+// ═══ Data Table ═══
+function renderDataTable() {
+  const indep = val('indepName') || 'X', dep = val('depName') || 'Y';
+  const iu = val('indepUnit') ? ` (${val('indepUnit')})` : '';
+  const du = val('depUnit') ? ` (${val('depUnit')})` : '';
+  const cd = computeAll();
+
+  let hdr = `<tr><th style="color:var(--textDim);min-width:44px">#</th>
+    <th style="color:var(--accent);min-width:100px;text-align:left">${indep}${iu}</th>`;
+  for (let t=0;t<trialCount;t++) hdr += `<th style="color:var(--textDim);min-width:88px;text-align:left">${t+1}차${du}</th>`;
+  hdr += `<th style="color:var(--accentBright);min-width:80px">평균</th>
+    <th style="color:var(--warn);min-width:100px">측정불확도 U</th>
+    <th style="min-width:38px"></th></tr>`;
+  $('dataTable').querySelector('thead').innerHTML = hdr;
+
+  let body = '';
+  rows.forEach((row, i) => {
+    const d = cd.find(c => c.x === parseFloat(row.x));
+    let meanStr = '—', uStr = '—';
+    if (d) { const {rU,dp} = roundU1sig(d.U); meanStr = fmtFixed(d.mean, dp); uStr = '±' + fmtFixed(rU, dp); }
+    body += `<tr style="border-bottom:1px solid rgba(31,61,38,.18)">
+      <td style="color:var(--textMuted)">${i+1}</td>
+      <td><input type="number" step="any" value="${row.x}" onchange="rows[${i}].x=this.value;renderDataTable()"></td>`;
+    for (let t=0;t<trialCount;t++)
+      body += `<td><input type="number" step="any" value="${row.trials[t]}" onchange="rows[${i}].trials[${t}]=this.value;renderDataTable()"></td>`;
+    body += `<td style="color:var(--accentBright);font-weight:700">${meanStr}</td>
+      <td style="color:var(--warn);font-weight:700">${uStr}</td>
+      <td><button class="del-btn" onclick="removeRow(${i})" ${rows.length<=1?'disabled':''}>✕</button></td></tr>`;
+  });
+  $('dataTable').querySelector('tbody').innerHTML = body;
+
+  const ms = numVal('minScale');
+  if (ms > 0) {
+    const k = numVal('kFactor') || 2;
+    $('noteBox').style.display = '';
+    $('noteBox').innerHTML = `<span style="color:var(--warn)">※ 불확도 산출 방식</span><br>
+      A형 불확도 u<sub>A</sub> = s / √n (표준편차 / √반복횟수)<br>
+      B형 불확도 u<sub>B</sub> = (최소눈금/2) / √3 = ${formatNum((ms/2)/Math.sqrt(3))}<br>
+      합성표준불확도 u<sub>c</sub> = √(u<sub>A</sub>² + u<sub>B</sub>²)<br>
+      <span style="color:var(--accent)">측정불확도 U = k × u<sub>c</sub> (k = ${k})</span>`;
+  } else { $('noteBox').style.display = 'none'; }
+}
+
+// ═══ Error bar plugin ═══
+const errorBarPlugin = {
+  id: 'errorBars',
+  afterDatasetsDraw(chart) {
+    const meta = chart.getDatasetMeta(0);
+    if (!meta?.data) return;
+    const ctx = chart.ctx, raw = chart.data.datasets[0]?.errorBars;
+    if (!raw) return;
+    ctx.save(); ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+    meta.data.forEach((pt, i) => {
+      const u = raw[i]; if (!u || u === 0) return;
+      const yS = chart.scales.y;
+      const yT = yS.getPixelForValue(chart.data.datasets[0].data[i].y + u);
+      const yB = yS.getPixelForValue(chart.data.datasets[0].data[i].y - u);
+      const cx = pt.x, cw = 7;
+      ctx.beginPath(); ctx.moveTo(cx,yT); ctx.lineTo(cx,yB); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx-cw,yT); ctx.lineTo(cx+cw,yT); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx-cw,yB); ctx.lineTo(cx+cw,yB); ctx.stroke();
+    });
+    ctx.restore();
+  }
+};
+
+// ═══ Render results ═══
+function resetCanvas(id) {
+  const old = $(id);
+  const parent = old.parentNode;
+  const nw = document.createElement('canvas');
+  nw.id = id;
+  parent.replaceChild(nw, old);
+  return nw;
+}
+
+function renderResults() {
+  const cd = computeAll(), hasData = cd.length >= 2;
+  $('emptyMsg').style.display = hasData ? 'none' : '';
+  $('resultsContent').style.display = hasData ? '' : 'none';
+  if (!hasData) return;
+
+  const indep = val('indepName') || 'X', dep = val('depName') || 'Y';
+  const iu = val('indepUnit') ? ` (${val('indepUnit')})` : '';
+  const du = val('depUnit') ? ` (${val('depUnit')})` : '';
+  const k = numVal('kFactor') || 2;
+  const xVals = cd.map(d=>d.x), yMeans = cd.map(d=>d.mean);
+  const models = tryModels(xVals, yMeans, forceOrigin);
+  const best = models[0] || null;
+
+  // Main Chart
+  $('mainChartTitle').textContent = `📈 ${indep} vs ${dep} (with best fit)`;
+  const scPts = cd.map(d=>({x:d.x,y:d.mean})), errBars = cd.map(d=>d.U);
+  const xMin = forceOrigin ? Math.min(0,...xVals) : Math.min(...xVals), xMax = Math.max(...xVals);
+  const fitPts = [];
+  if (best) { for(let i=0;i<=80;i++){const xv=xMin+(xMax-xMin)*i/80;const yv=best.fn(xv);if(isFinite(yv))fitPts.push({x:xv,y:yv});} }
+  const allYs = cd.flatMap(d=>[d.mean-d.U,d.mean+d.U]);
+  if(fitPts.length) fitPts.forEach(p=>allYs.push(p.y));
+  const yMn=Math.min(...allYs),yMx=Math.max(...allYs),yPd=(yMx-yMn)*.08||1;
+
+  if(mainChartInst) mainChartInst.destroy();
+  const mainCanvas = resetCanvas('mainChart');
+  mainChartInst = new Chart(mainCanvas,{
+    type:'scatter',
+    data:{datasets:[
+      {label:dep,data:scPts,errorBars:errBars,backgroundColor:'#4ade80',borderColor:'#4ade80',pointRadius:6,pointHoverRadius:8,order:2},
+      {label:'Best Fit',data:fitPts,type:'line',borderColor:'#86efac',borderWidth:2.5,pointRadius:0,fill:false,order:1,tension:.3}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:400},
+      scales:{
+        x:{title:{display:true,text:`${indep}${iu}`,color:'#a3c9a8',font:{family:"'Pretendard',sans-serif",size:14}},
+           ticks:{color:'#5c8a63',font:{family:"'JetBrains Mono',monospace",size:13}},grid:{color:'#1f3d26'}},
+        y:{title:{display:true,text:`${dep}${du}`,color:'#a3c9a8',font:{family:"'Pretendard',sans-serif",size:14}},
+           ticks:{color:'#5c8a63',font:{family:"'JetBrains Mono',monospace",size:13}},grid:{color:'#1f3d26'},
+           min:yMn-yPd,max:yMx+yPd}
+      },
+      plugins:{
+        legend:{labels:{color:'#a3c9a8',font:{family:"'JetBrains Mono',monospace",size:13}}},
+        tooltip:{backgroundColor:'#142818',borderColor:'#1f3d26',borderWidth:1,titleColor:'#a3c9a8',bodyColor:'#e8f5e9',
+          bodyFont:{family:"'JetBrains Mono',monospace",size:13}}
+      }
+    },
+    plugins:[errorBarPlugin]
+  });
+
+  // Model list
+  let mh = '';
+  models.forEach((m,i)=>{
+    const is0=i===0,bw=Math.max(0,m.r2)*100;
+    mh += `<div class="model-row${is0?' best':''}">
+      ${is0?'<span style="font-size:18px">🏆</span>':''}
+      <div style="min-width:140px"><div class="model-name" style="color:${is0?'var(--best)':'var(--text)'}">${m.name}</div><div class="model-sub">${m.label}</div></div>
+      <div class="r2-bar"><div class="r2-fill" style="width:${bw}%;background:${is0?'linear-gradient(90deg,var(--best),#fde68a)':'linear-gradient(90deg,rgba(74,222,128,.5),rgba(74,222,128,.2))'}"></div></div>
+      <div class="r2-val" style="color:${is0?'var(--best)':'var(--textDim)'}">R²=${formatNum(m.r2)}</div></div>`;
+  });
+  $('modelList').innerHTML = mh;
+
+  // Best box
+  if(best){
+    const formula=best.name.replace('x',indep).replace('y',dep), cols=forceOrigin?'1fr 1fr':'1fr 1fr 1fr';
+    let cards=`<div class="stat-card"><div class="stat-label">기울기 a</div><div class="stat-val">${formatNum(best.a)}</div></div>`;
+    if(!forceOrigin) cards+=`<div class="stat-card"><div class="stat-label">절편 b</div><div class="stat-val">${formatNum(best.b)}</div></div>`;
+    cards+=`<div class="stat-card"><div class="stat-label">결정계수 R²</div><div class="stat-val" style="color:var(--best)">${formatNum(best.r2)}</div></div>`;
+    $('bestBox').innerHTML=`<div class="panel-title" style="color:var(--best);margin-bottom:14px">✅ 최적 관계식 (Best Fit)</div>
+      <div class="best-formula">${formula}</div><div class="stat-grid" style="grid-template-columns:${cols}">${cards}</div>`;
+    $('bestBox').style.display='';
+  } else { $('bestBox').style.display='none'; }
+
+  // Linearized chart
+  if(best && best.transform!=='x'){
+    const linData=cd.map(d=>{let tx=d.x;const t=best.transform;
+      if(t==='x²')tx=d.x*d.x;else if(t==='1/x')tx=Math.abs(d.x)>1e-12?1/d.x:NaN;
+      else if(t==='√x')tx=d.x>=0?Math.sqrt(d.x):NaN;else if(t==='ln(x)')tx=d.x>0?Math.log(d.x):NaN;
+      else if(t==='1/x²')tx=Math.abs(d.x)>1e-12?1/(d.x*d.x):NaN;
+      return isFinite(tx)?{x:tx,y:d.mean}:null;}).filter(Boolean);
+    if(linData.length>=2){
+      $('linChartWrap').style.display='';
+      $('linChartTitle').textContent=`📐 직선화 그래프 (${best.transform} vs ${dep})`;
+      const lxs=linData.map(p=>p.x),lxMn=Math.min(...lxs),lxMx=Math.max(...lxs);
+      const linFit=[];for(let i=0;i<=40;i++){const xv=lxMn+(lxMx-lxMn)*i/40;linFit.push({x:xv,y:best.a*xv+best.b});}
+      if(linChartInst)linChartInst.destroy();
+      const linCanvas = resetCanvas('linChart');
+      linChartInst=new Chart(linCanvas,{type:'scatter',
+        data:{datasets:[
+          {label:dep,data:linData,backgroundColor:'#4ade80',borderColor:'#4ade80',pointRadius:6,order:2},
+          {label:'Fit',data:linFit,type:'line',borderColor:'rgba(74,222,128,.45)',borderWidth:2,borderDash:[6,3],pointRadius:0,fill:false,order:1}
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
+          scales:{
+            x:{title:{display:true,text:best.transform,color:'#a3c9a8',font:{size:14}},ticks:{color:'#5c8a63',font:{family:"'JetBrains Mono',monospace",size:13}},grid:{color:'#1f3d26'}},
+            y:{title:{display:true,text:`${dep}${du}`,color:'#a3c9a8',font:{size:14}},ticks:{color:'#5c8a63',font:{family:"'JetBrains Mono',monospace",size:13}},grid:{color:'#1f3d26'}}
+          },
+          plugins:{legend:{labels:{color:'#a3c9a8',font:{size:13}}},tooltip:{backgroundColor:'#142818',borderColor:'#1f3d26',borderWidth:1,bodyColor:'#e8f5e9'}}
+        }
+      });
+    } else {$('linChartWrap').style.display='none';}
+  } else { $('linChartWrap').style.display='none'; if(linChartInst){linChartInst.destroy();linChartInst=null;} }
+
+  // Summary table
+  $('summaryTable').querySelector('thead').innerHTML=`<tr>
+    <th style="color:var(--accent)">${indep}${iu}</th>
+    <th style="color:var(--accentBright)">평균${du}</th>
+    <th style="color:var(--textDim)">u<sub>A</sub></th>
+    <th style="color:var(--textDim)">u<sub>B</sub></th>
+    <th style="color:var(--textDim)">u<sub>c</sub></th>
+    <th style="color:var(--warn)">U (k=${k})</th>
+    <th style="color:var(--textDim)">범위/2</th></tr>`;
+  let sb='';
+  cd.forEach(d=>{const{rU,dp}=roundU1sig(d.U);
+    sb+=`<tr style="border-bottom:1px solid rgba(31,61,38,.18)">
+      <td style="font-weight:700">${formatNum(d.x)}</td>
+      <td style="color:var(--accentBright);font-weight:700">${fmtFixed(d.mean,dp)}</td>
+      <td style="color:var(--textMuted)">${formatNum(d.uA)}</td>
+      <td style="color:var(--textMuted)">${formatNum(d.uB)}</td>
+      <td style="color:var(--textMuted)">±${formatNum(d.uC)}</td>
+      <td style="color:var(--warn);font-weight:700">±${fmtFixed(rU,dp)}</td>
+      <td style="color:var(--textMuted)">±${formatNum(d.halfRange)}</td></tr>`;
+  });
+  $('summaryTable').querySelector('tbody').innerHTML=sb;
+}
+
+// ═══ Downloads ═══
+function downloadCSV() {
+  const cd = computeAll();
+  if (!cd.length) return alert('데이터가 없습니다.');
+  const indep=val('indepName')||'X', dep=val('depName')||'Y', k=numVal('kFactor')||2;
+  const models = tryModels(cd.map(d=>d.x), cd.map(d=>d.mean), forceOrigin);
+  const best = models[0]||null;
+
+  let csv = '\uFEFF';
+  csv += `[실험 설정]\n조작변인,${indep},단위,${val('indepUnit')}\n종속변인,${dep},단위,${val('depUnit')}\n최소눈금,${val('minScale')},포함인자 k,${k}\n\n`;
+  csv += `[결과 요약표]\n${indep},평균(${dep}),u_A,u_B,u_c,측정불확도 U(k=${k}),범위/2\n`;
+  cd.forEach(d=>{const{rU,dp}=roundU1sig(d.U);
+    csv+=`${d.x},${fmtFixed(d.mean,dp)},${formatNum(d.uA)},${formatNum(d.uB)},${formatNum(d.uC)},±${fmtFixed(rU,dp)},±${formatNum(d.halfRange)}\n`;});
+  csv += `\n[모델 비교 (R²)]\n모델,a,b,R²\n`;
+  models.forEach(m=>{csv+=`"${m.name}",${formatNum(m.a)},${formatNum(m.b)},${formatNum(m.r2)}\n`;});
+  if(best){csv+=`\n[최적 관계식]\n${best.name.replace('x',indep).replace('y',dep)}\n기울기 a,${formatNum(best.a)}\n`;
+    if(!forceOrigin) csv+=`절편 b,${formatNum(best.b)}\n`;
+    csv+=`결정계수 R²,${formatNum(best.r2)}\n`;}
+
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`실험결과_${indep}_vs_${dep}.csv`; a.click(); URL.revokeObjectURL(a.href);
+}
+
+function downloadChartImage() {
+  if(!mainChartInst) return alert('그래프가 없습니다.');
+  const canvas=$('mainChart');
+  const tmp=document.createElement('canvas'); tmp.width=canvas.width*2; tmp.height=canvas.height*2;
+  const ctx=tmp.getContext('2d'); ctx.scale(2,2);
+  ctx.fillStyle='#0d1f12'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(canvas,0,0,canvas.width,canvas.height);
+  const a=document.createElement('a'); a.href=tmp.toDataURL('image/png');
+  a.download=`그래프_${val('indepName')||'X'}_vs_${val('depName')||'Y'}.png`; a.click();
+}
+
+// ═══ Auto-update ═══
+['indepName','indepUnit','depName','depUnit','minScale','kFactor'].forEach(id=>{
+  $(id).addEventListener('input',()=>renderDataTable());
+});
+renderDataTable();
+</script>
+</body>
+</html>
